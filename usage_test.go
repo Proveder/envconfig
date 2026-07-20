@@ -7,7 +7,6 @@ package envconfig
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -20,25 +19,25 @@ var testUsageTableResult, testUsageListResult, testUsageCustomResult, testUsageB
 func TestMain(m *testing.M) {
 
 	// Load the expected test results from a text file
-	data, err := ioutil.ReadFile("testdata/default_table.txt")
+	data, err := os.ReadFile("testdata/default_table.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 	testUsageTableResult = string(data)
 
-	data, err = ioutil.ReadFile("testdata/default_list.txt")
+	data, err = os.ReadFile("testdata/default_list.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 	testUsageListResult = string(data)
 
-	data, err = ioutil.ReadFile("testdata/custom.txt")
+	data, err = os.ReadFile("testdata/custom.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 	testUsageCustomResult = string(data)
 
-	data, err = ioutil.ReadFile("testdata/fault.txt")
+	data, err = os.ReadFile("testdata/fault.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,14 +50,11 @@ func TestMain(m *testing.M) {
 func compareUsage(want, got string, t *testing.T) {
 	got = strings.ReplaceAll(got, " ", ".")
 	if want != got {
-		shortest := len(want)
-		if len(got) < shortest {
-			shortest = len(got)
-		}
+		shortest := min(len(got), len(want))
 		if len(want) != len(got) {
 			t.Errorf("expected result length of %d, found %d", len(want), len(got))
 		}
-		for i := 0; i < shortest; i++ {
+		for i := range shortest {
 			if want[i] != got[i] {
 				t.Errorf("difference at index %d, expected '%c' (%v), found '%c' (%v)\n",
 					i, want[i], want[i], got[i], got[i])

@@ -58,10 +58,10 @@ type varInfo struct {
 }
 
 // GatherInfo gathers information about the specified struct
-func gatherInfo(prefix string, spec interface{}) ([]varInfo, error) {
+func gatherInfo(prefix string, spec any) ([]varInfo, error) {
 	s := reflect.ValueOf(spec)
 
-	if s.Kind() != reflect.Ptr {
+	if s.Kind() != reflect.Pointer {
 		return nil, ErrInvalidSpecification
 	}
 	s = s.Elem()
@@ -79,7 +79,7 @@ func gatherInfo(prefix string, spec interface{}) ([]varInfo, error) {
 			continue
 		}
 
-		for f.Kind() == reflect.Ptr {
+		for f.Kind() == reflect.Pointer {
 			if f.IsNil() {
 				if f.Type().Elem().Kind() != reflect.Struct {
 					// nil pointer to a non-struct: leave it alone
@@ -152,7 +152,7 @@ func gatherInfo(prefix string, spec interface{}) ([]varInfo, error) {
 // CheckDisallowed checks that no environment variables with the prefix are set
 // that we don't know how or want to parse. This is likely only meaningful with
 // a non-empty prefix.
-func CheckDisallowed(prefix string, spec interface{}) error {
+func CheckDisallowed(prefix string, spec any) error {
 	infos, err := gatherInfo(prefix, spec)
 	if err != nil {
 		return err
@@ -181,7 +181,7 @@ func CheckDisallowed(prefix string, spec interface{}) error {
 }
 
 // Process populates the specified struct based on environment variables
-func Process(prefix string, spec interface{}) error {
+func Process(prefix string, spec any) error {
 	infos, err := gatherInfo(prefix, spec)
 
 	for _, info := range infos {
@@ -228,7 +228,7 @@ func Process(prefix string, spec interface{}) error {
 }
 
 // MustProcess is the same as Process but panics if an error occurs
-func MustProcess(prefix string, spec interface{}) {
+func MustProcess(prefix string, spec any) {
 	if err := Process(prefix, spec); err != nil {
 		panic(err)
 	}
@@ -255,7 +255,7 @@ func processField(value string, field reflect.Value) error {
 		return b.UnmarshalBinary([]byte(value))
 	}
 
-	if typ.Kind() == reflect.Ptr {
+	if typ.Kind() == reflect.Pointer {
 		typ = typ.Elem()
 		if field.IsNil() {
 			field.Set(reflect.New(typ))
@@ -319,8 +319,7 @@ func processField(value string, field reflect.Value) error {
 	case reflect.Map:
 		mp := reflect.MakeMap(typ)
 		if strings.TrimSpace(value) != "" {
-			pairs := strings.Split(value, ",")
-			for _, pair := range pairs {
+			for pair := range strings.SplitSeq(value, ",") {
 				kvpair := strings.Split(pair, ":")
 				if len(kvpair) != 2 {
 					return fmt.Errorf("invalid map item: %q", pair)
@@ -344,7 +343,7 @@ func processField(value string, field reflect.Value) error {
 	return nil
 }
 
-func interfaceFrom(field reflect.Value, fn func(interface{}, *bool)) {
+func interfaceFrom(field reflect.Value, fn func(any, *bool)) {
 	// it may be impossible for a struct field to fail this check
 	if !field.CanInterface() {
 		return
@@ -357,22 +356,22 @@ func interfaceFrom(field reflect.Value, fn func(interface{}, *bool)) {
 }
 
 func decoderFrom(field reflect.Value) (d Decoder) {
-	interfaceFrom(field, func(v interface{}, ok *bool) { d, *ok = v.(Decoder) })
+	interfaceFrom(field, func(v any, ok *bool) { d, *ok = v.(Decoder) })
 	return d
 }
 
 func setterFrom(field reflect.Value) (s Setter) {
-	interfaceFrom(field, func(v interface{}, ok *bool) { s, *ok = v.(Setter) })
+	interfaceFrom(field, func(v any, ok *bool) { s, *ok = v.(Setter) })
 	return s
 }
 
 func textUnmarshaler(field reflect.Value) (t encoding.TextUnmarshaler) {
-	interfaceFrom(field, func(v interface{}, ok *bool) { t, *ok = v.(encoding.TextUnmarshaler) })
+	interfaceFrom(field, func(v any, ok *bool) { t, *ok = v.(encoding.TextUnmarshaler) })
 	return t
 }
 
 func binaryUnmarshaler(field reflect.Value) (b encoding.BinaryUnmarshaler) {
-	interfaceFrom(field, func(v interface{}, ok *bool) { b, *ok = v.(encoding.BinaryUnmarshaler) })
+	interfaceFrom(field, func(v any, ok *bool) { b, *ok = v.(encoding.BinaryUnmarshaler) })
 	return b
 }
 

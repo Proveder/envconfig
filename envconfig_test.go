@@ -857,7 +857,7 @@ func BenchmarkGatherInfo(b *testing.B) {
 	os.Setenv("ENV_CONFIG_HONOR", "honor")
 	os.Setenv("ENV_CONFIG_DATETIME", "2016-08-16T18:57:05Z")
 	os.Setenv("ENV_CONFIG_MULTI_WORD_VAR_WITH_AUTO_SPLIT", "24")
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		var s Specification
 		gatherInfo("env_config", &s)
 	}

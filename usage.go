@@ -37,21 +37,21 @@ KEY	TYPE	DEFAULT	REQUIRED	DESCRIPTION
 )
 
 var (
-	decoderType           = reflect.TypeOf((*Decoder)(nil)).Elem()
-	setterType            = reflect.TypeOf((*Setter)(nil)).Elem()
-	textUnmarshalerType   = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
-	binaryUnmarshalerType = reflect.TypeOf((*encoding.BinaryUnmarshaler)(nil)).Elem()
+	decoderType           = reflect.TypeFor[Decoder]()
+	setterType            = reflect.TypeFor[Setter]()
+	textUnmarshalerType   = reflect.TypeFor[encoding.TextUnmarshaler]()
+	binaryUnmarshalerType = reflect.TypeFor[encoding.BinaryUnmarshaler]()
 )
 
 func implementsInterface(t reflect.Type) bool {
 	return t.Implements(decoderType) ||
-		reflect.PtrTo(t).Implements(decoderType) ||
+		reflect.PointerTo(t).Implements(decoderType) ||
 		t.Implements(setterType) ||
-		reflect.PtrTo(t).Implements(setterType) ||
+		reflect.PointerTo(t).Implements(setterType) ||
 		t.Implements(textUnmarshalerType) ||
-		reflect.PtrTo(t).Implements(textUnmarshalerType) ||
+		reflect.PointerTo(t).Implements(textUnmarshalerType) ||
 		t.Implements(binaryUnmarshalerType) ||
-		reflect.PtrTo(t).Implements(binaryUnmarshalerType)
+		reflect.PointerTo(t).Implements(binaryUnmarshalerType)
 }
 
 // toTypeDescription converts Go types into a human readable description
@@ -68,7 +68,7 @@ func toTypeDescription(t reflect.Type) string {
 			toTypeDescription(t.Key()),
 			toTypeDescription(t.Elem()),
 		)
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return toTypeDescription(t.Elem())
 	case reflect.Struct:
 		if implementsInterface(t) && t.Name() != "" {
@@ -110,7 +110,7 @@ func toTypeDescription(t reflect.Type) string {
 }
 
 // Usage writes usage information to stdout using the default header and table format
-func Usage(prefix string, spec interface{}) error {
+func Usage(prefix string, spec any) error {
 	// The default is to output the usage information as a table
 	// Create tabwriter instance to support table output
 	tabs := tabwriter.NewWriter(os.Stdout, 1, 0, 4, ' ', 0)
@@ -121,7 +121,7 @@ func Usage(prefix string, spec interface{}) error {
 }
 
 // Usagef writes usage information to the specified io.Writer using the specified template specification
-func Usagef(prefix string, spec interface{}, out io.Writer, format string) error {
+func Usagef(prefix string, spec any, out io.Writer, format string) error {
 
 	// Specify the default usage template functions
 	functions := template.FuncMap{
@@ -153,7 +153,7 @@ func Usagef(prefix string, spec interface{}, out io.Writer, format string) error
 }
 
 // Usaget writes usage information to the specified io.Writer using the specified template
-func Usaget(prefix string, spec interface{}, out io.Writer, tmpl *template.Template) error {
+func Usaget(prefix string, spec any, out io.Writer, tmpl *template.Template) error {
 	// gather first
 	infos, err := gatherInfo(prefix, spec)
 	if err != nil {
