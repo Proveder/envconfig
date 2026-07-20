@@ -1,6 +1,6 @@
 # Go files tracked by git, expanded lazily by the shell (gopls check needs explicit
 # paths - it does not accept ./...). Falls back to find outside a git checkout.
-GO_FILES = $$(git ls-files '*.go' 2>/dev/null || find . -name '*.go' -not -path './vendor/*')
+GO_FILES = $$(git ls-files '*.go' 2>/dev/null | xargs -I{} sh -c '[ -f "{}" ] && echo "{}"' || find . -name '*.go' -not -path './vendor/*')
 
 # gopls' new(expr) modernizer needs a go >= 1.26 module and this one declares
 # go 1.24.4, so the category cannot fire here at all. The pattern is kept only so
