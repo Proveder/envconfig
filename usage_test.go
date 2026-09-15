@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"text/tabwriter"
@@ -148,4 +149,35 @@ func TestUsageBadFormat(t *testing.T) {
 		t.Error(err.Error())
 	}
 	compareUsage(testUsageBadFormatResult, buf.String(), t)
+}
+
+type (
+	namedBool   bool
+	namedString string
+	namedInt    int
+	namedUint   uint
+	namedFloat  float64
+)
+
+func TestToTypeDescriptionNamedScalars(t *testing.T) {
+	cases := []struct {
+		v    any
+		want string
+	}{
+		{true, "True or False"},
+		{namedBool(true), "namedBool"},
+		{"", "String"},
+		{namedString(""), "namedString"},
+		{int8(0), "Integer"},
+		{namedInt(0), "namedInt"},
+		{uint16(0), "Unsigned Integer"},
+		{namedUint(0), "namedUint"},
+		{float32(0), "Float"},
+		{namedFloat(0), "namedFloat"},
+	}
+	for _, c := range cases {
+		if got := toTypeDescription(reflect.TypeOf(c.v)); got != c.want {
+			t.Errorf("toTypeDescription(%T) = %q, want %q", c.v, got, c.want)
+		}
+	}
 }

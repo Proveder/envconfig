@@ -104,19 +104,17 @@ func gatherInfo(prefix string, spec any) ([]varInfo, error) {
 
 		// Best effort to un-pick camel casing as separate words
 		if isTrue(ftype.Tag.Get("split_words")) {
-			words := gatherRegexp.FindAllStringSubmatch(ftype.Name, -1)
-			if len(words) > 0 {
-				var name []string
-				for _, words := range words {
-					if m := acronymRegexp.FindStringSubmatch(words[0]); len(m) == 3 {
-						name = append(name, m[1], m[2])
-					} else {
-						name = append(name, words[0])
-					}
+			// A field name is a non-empty identifier and gatherRegexp matches any
+			// non-empty string, so there is always at least one word.
+			var name []string
+			for _, words := range gatherRegexp.FindAllStringSubmatch(ftype.Name, -1) {
+				if m := acronymRegexp.FindStringSubmatch(words[0]); len(m) == 3 {
+					name = append(name, m[1], m[2])
+				} else {
+					name = append(name, words[0])
 				}
-
-				info.Key = strings.Join(name, "_")
 			}
+			info.Key = strings.Join(name, "_")
 		}
 		if info.Alt != "" {
 			info.Key = info.Alt
